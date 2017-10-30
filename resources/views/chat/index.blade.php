@@ -7,6 +7,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>聊天室</title>
         <link href="{{asset('Hui/css/Hui.css')}}" rel="stylesheet" type="text/css" />
+        <link href="https://cdn.bootcss.com/layer/3.0.3/mobile/need/layer.min.css" rel="stylesheet">
         <style type="text/css">
             html,body{
                 height:100%
@@ -34,8 +35,14 @@
         <script src="{{asset('Hui/js/H.js')}}" type="text/javascript"></script>
         <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.2.2/jquery.form.min.js"></script>
+        <script src="https://cdn.bootcss.com/layer/3.0.3/mobile/layer.js"></script>
 <!--        <script src="https://cdn.bootcss.com/zepto/1.0rc1/zepto.min.js"></script>-->
         <script type="text/javascript">
+                @php
+                    if($isWeixin){
+                        echo "localStorage.setItem('token', \"{$userData['token']}\");";
+                    }
+                @endphp
                 $.ajaxSetup({
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -104,6 +111,51 @@
                 }
                 var wsServer = "ws://118.89.190.171:8282";
                 ws = new WebSocket(wsServer);
+
+                var onopen = function () {
+                    //loading带文字
+                    layer.open({
+                        type: 2
+                        , content: '加载中'
+                    });
+                }
+
+                ws.onopen = onopen;
+
+                function init(data) {
+                    layer.open({
+                        type: 2
+                        , content: '加载中'
+                    });
+                    $.ajax({
+                        url: '/bind',
+                        type: 'post',
+                        dataType: 'json',
+                        data: {token: localStorage.getItem('token'), 'client_id': data.client_id},
+                        success: function (data) {
+                            layer.closeAll();
+                            if (data.status == 1) {
+                                localStorage.setItem('client_id', data.client_id);
+                                layer.open({
+                                    content: '初始化成功'
+                                    , skin: 'msg'
+                                    , time: 2 //2秒后自动关闭
+                                });
+                                console.log('绑定成功');
+                            }
+                        },
+                        error: function () {
+                            layer.closeAll();
+                            layer.open({
+                                content: '初始化失败,尝试重新加载'
+                                , skin: 'msg'
+                                , time: 2 //2秒后自动关闭
+                            });
+                            init(data);
+                        }
+                    });
+                }
+
                 var onmessage = function (e) {
                     // json数据转换成js对象
                     var data = eval("(" + e.data + ")");
@@ -111,10 +163,7 @@
                     var type = data.type || '';
                     switch (type) {
                         case 'init':
-                            $.post('/bind', {token: localStorage.getItem('token'), 'client_id': data.client_id}, function (data) {
-                                localStorage.setItem('client_id', data.client_id);
-                                console.log('绑定成功');
-                            });
+                            init(data);
                             break;
                         case 'set_token':
                             localStorage.setItem('token', data.token);

@@ -15,6 +15,5 @@ Route::get('/','ChatController@enter');
 Route::post('/bind','ChatController@bind');
 Route::post('/send_message','ChatController@sendMessage');
 Route::post('/upload_img','ChatController@uploadImg');
-Route::post('/test',function(){
-    return 'test';
-});
+Route::any('/wechat_oauth','WechatController@wechatOauth');
+Route::get('/test','TestController@index');

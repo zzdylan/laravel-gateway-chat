@@ -8,33 +8,19 @@ use Image;
 use Carbon\Carbon;
 use DB;
 use zgldh\QiniuStorage\QiniuStorage;
-use EasyWeChat\Foundation\Application;
 
 class ChatController extends Controller {
 
-    public function enter(Request $request, Application $wechat) {
+    public function wechatOauth(){
+        
+    }
+    
+    public function enter(Request $request) {
         $now = Carbon::now();
         $dayOfWeek = $now->dayOfWeek;
         $weekArr = ['星期天', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
         $time = $now->toDateTimeString() . ' ' . $weekArr[$dayOfWeek];
-        $user_agent = $request->server('HTTP_USER_AGENT');
-        $returnData = ['time' => $time, 'isWeixin' => 0];
-        if (strpos($user_agent, 'MicroMessenger') && $request->server('HTTP_HOST') == env('APP_HOST')) {
-            //微信浏览
-            if (empty(session('wechat_userinfo'))) {
-                session(['target_url' => '/']);
-                return $wechat->oauth->scopes(['snsapi_userinfo'])
-                                ->redirect();
-            }
-            $userInfo = session('wechat_userinfo');
-            $userData = ['nickname' => $userInfo['nickname'], 'avatar' => $userInfo['headimgurl'], 'token' => uniqid('chat_')];
-            $uid = DB::table('users')->insertGetId($userData);
-            $userData['id'] = $uid;
-            $returnData['isWeixin'] = 1;
-            $returnData['userData'] = $userData;
-        }
-        //dd(session('wechat_userinfo'));
-        return view('chat.index', $returnData);
+        return view('chat.index', ['time' => $time]);
     }
 
     public function chatRoom() {
